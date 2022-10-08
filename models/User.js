@@ -1,8 +1,9 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
+const bcrypt = require('bcrypt');
 
 //user model
-class User extends Model {}
+class User extends Model { }
 
 //define table columns and configuration
 
@@ -22,14 +23,14 @@ User.init(
         //username column 
         username: {
             type: DataTypes.STRING,
-            allowNull:false
+            allowNull: false
         },
         //email
         email: {
-            type:DataTypes.STRING,
-            allowNull:false,
+            type: DataTypes.STRING,
+            allowNull: false,
             //no duplicate email values
-            unique:true,
+            unique: true,
             // if allowNull is set to false, we can run our data through validators before creating the table data
             validate: {
                 isEmail: true
@@ -46,17 +47,29 @@ User.init(
         }
     },
     {
+        hooks: {
+            //beforeCreate lifecycle function
+            async beforeCreate(newUserData) {
+                newUserData.password = await bcrypt.hash(newUserData.password, 10);
+                return newUserData
+            },
+            //beforeUpdate lifecycle function (if user updates pass rehash)
+            async beforeUpdate(updatedUserData) {
+                updatedUserData.password = await bcrypt.hash(updatedUserData.password, 10);
+                return updatedUserData;
+            }
+        },
         //table configuration options (https://sequelize.org/v5/manual/models-definition.html#configuration))
         //imported sequelize connection (to direct connection to db)
         sequelize,
         //don't auto create createdAt/updatedAt timestamps
-        timestamps:false,
+        timestamps: false,
         //don't pluralize the name of db
         freezeTableName: true,
         //use underscores instead of camel case
-        underscored:true,
+        underscored: true,
         //make model name lowercase in db
-        modelName:'user'
+        modelName: 'user'
     }
 );
 
